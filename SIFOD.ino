@@ -19,7 +19,7 @@
 
  * General
  * GND - GND
- * VCL - 5V
+ * VCL/VIN - 5V
  * 3v - 3.3V/3V
  */
 
@@ -54,12 +54,12 @@ String approvedID = "E317851E";
 boolean getID();
 
 bool taskComplete = false;
-//
+
 void setup() { 
   // Init Serial 
   SPI.begin(); // Init SPI bus
   Serial.begin(9600);
-  pinMode(D8, OUTPUT);
+  pinMode(D8, INPUT);
   //Init rfid
   rfid.PCD_Init();
 
@@ -80,38 +80,38 @@ void setup() {
   // set up LCD
   lcd.init();
   lcd.backlight();
-  
-
-
-  Serial.begin(9600);
 }
  
 void loop() {
+  int buttonVal = digitalRead(D8);
 
-  lcd.setCursor(2,0);
-  lcd.print("Place Card");
+  if (buttonVal == 1) {
 
-  if (getID()){
-    // run the getID fucntion to get the HEX value for card
-    lcd.clear();
     lcd.setCursor(2,0);
-    lcd.print("Card no: ");
-    lcd.setCursor(2, 1);
-    lcd.print(tagID);
-    delay(2000);
-    lcd.clear();
+    lcd.print("Place Card");
 
-    bool inSheet = checkSheet();
-    
-    // check if it is in the sheets in order to see if it is approved
-    if(!inSheet){
-      lcd.setCursor(1,0);
-      lcd.print("Access Denied");
+    if (getID()){
+      // run the getID fucntion to get the HEX value for card
+      lcd.clear();
+      lcd.setCursor(2,0);
+      lcd.print("Card no: ");
+      lcd.setCursor(2, 1);
+      lcd.print(tagID);
       delay(2000);
       lcd.clear();
+
+      bool inSheet = checkSheet();
+      
+      // check if it is in the sheets in order to see if it is approved
+      if(!inSheet){
+        lcd.setCursor(1,0);
+        lcd.print("Access Denied");
+        delay(2000);
+        lcd.clear();
+      }
+
+
     }
-
-
   }
 }
 // check if it is in the sheet
