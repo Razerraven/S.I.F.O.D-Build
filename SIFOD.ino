@@ -57,8 +57,6 @@ MFRC522::MIFARE_Key key;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
-bool taskComplete = false;
-
 void setup() { 
   // Init Serial 
   SPI.begin(); // Init SPI bus
@@ -170,7 +168,7 @@ void setTime(int cellNum){
 boolean checkSheet(int &cellNum, String tagID){
   bool ready = GSheet.ready();
 
-  if (ready && !taskComplete){
+  if (ready){
 
     FirebaseJson response;
     String temp = sheetName + "!F2:F";
@@ -203,7 +201,6 @@ boolean checkSheet(int &cellNum, String tagID){
         break;
       }
     }
-    taskComplete = true;  
     return isThere;
   }
 }
