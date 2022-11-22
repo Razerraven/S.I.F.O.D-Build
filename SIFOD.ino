@@ -100,14 +100,14 @@ void loop() {
 
   lcd.setCursor(2,0);
   lcd.print("Place Card");
-  lcd.clear();
   String tagID = "";
   if (getID(tagID)){
     // run the getID fucntion to get the HEX value for card
 
     int cellNum = 1;
     bool inSheet = checkSheet(cellNum, tagID);
-        
+    
+    lcd.clear();
     lcd.print("Card no: ");
     lcd.setCursor(2, 1);
     lcd.print(tagID);
