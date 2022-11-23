@@ -40,27 +40,22 @@
 const char PRIVATE_KEY[] PROGMEM = "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDcnB2MRgQ/+/oW\nMkcukcCxYf9KkDx9JoBVjnY7o645N6d12wGmF+1QcOkJ+yhgPExC4sDWB9UoaJD8\n3u69TAVQZ4Qiat1rGkphAjw4P0kW3GpN6/sGzH60KEEoLVq4TXWEtJuWJpbN4f3d\ndTdsKbck+MAfpVbDf0b2a6gwcHKmP1KTSne4IUP2lXlJemvUmbh4MPup/Zeri+B3\nCEaXUmVuYNw1skrmWkPz49ZtYFdjIJjQC9+T5sRPBhUJSP0ZpkT5XcYtj4+P+xB1\nWB8SnDuLmmEASvxa5dm9lNPK+Z48HUuiiCjVE61pXgMttLkW0Nb2ouTx3QhpX1jr\n8OyukB4vAgMBAAECggEAAe/VEFgQ6CIUeL89fhmtFHKLbXNdu6WNrrZgv2t5M6r8\nzU5abhZ/R0UFGCrWxdI7HYagxNjBDU6ua6l1R+Tx/5Y3qbyiZH5M+rIsiKVMauNJ\nv/5Et5y18wIWaJf7OgICcOrbA6mNAt2NRsRwqFUu9KfRX8Lt4bKD7ZjOUBElnE1h\nqRLxEArfYokd36DfTZUmTu2/QESOF9tEYn/l5pz/plduJDPN97nm96+MZnueeR1e\ndMsFBLtwxi6spo6MA5KJRp3iKGGdcrnz9G87k/p/uek7AhEh+JPoWoGKlMlour5l\nDf97jvAk5ObFI2OqK09rho/9xeB3gFde2rjyfsxFIQKBgQD/cYNCHoK6Lor/r0YL\nqwzmtyy/ct8N9vGxgPAO2448o4UEapXiVaNYAfa+5gz4mU8c/DAgSMvSCuO9Ut+I\njcv1/8OSJFK+dqRGYkMWRb/58B1CEdfF2tBjI8JQdA5STjmNRrMk7eQW9H9rfLWT\nODgRNumlBwYHJf2JVnNEPUWnzwKBgQDdFywh9xTkuu2YdGGu9awd+IdQxEWYiCwa\nGffZIVg9jWkxDxcZMtQb05lUcViE//xcY3YFx6mKd1y9rg3BwKUuhO+VqDcEX/E9\njjqZNtJ38OFvLEH3fVMJdqDxqjp8RB96m7bNCvo4LaXzu3l9CG6aptOgKFd8BB3E\nwoDLFvVboQKBgBTKUlqRTSaGHz4ML/FHLLeidPvoB4uFa8p8qg0rhXod/PeNDUHs\nomzJTCHha3DYWX4McIZQJnaj+EEye4sLr2wIMwyz9CAYW+p2mOs5JhTbnCYCecNa\nudc309rkdz3vq/N5q5731bagk7ZV4hlnW/jatU1/MthmGSqSZLNLIV41AoGBAMj2\nzjvVbt12eI/SghRZ5WicxssIjUZXyNa08hAg+ieBCbP5RoK2LA1bKo2SNec3FHoa\nQmaAlcByPQ+BTannZX5CgdCkRdYpK4xLY0JvjaJOh2vZa+D9vuPkO+lPVbgs5/w3\n3FLG/qjf/W/t4kFfz8GtkMGMyfDFgRWfwxhXtxDhAoGBANer+CDgHWUoM9EV2DQ3\nOca2hClsAUsI4k0wNeecsLBrxVvzoT2Rfx/SNB2WvrCl2h9RZ66xUEkZzxQ7EgXm\n0Gs1o9mLMdCWqdGBNrlXXn8nEyedAWEc/8Z48RdbDYQoo+eQpXUxwpDXeHwIj/vM\nBWAHmeZSDmPAw/jJnJ6GcFtt\n-----END PRIVATE KEY-----\n";
  
 // set wifi info
-const char* ssid = "OWMBASIS";
-const char* password = "uw&gatech4237";
+const char* ssid = "SSID";
+const char* password = "PASS";
 
 // set date and time info
 const long utcOffsetInSeconds = 3600;
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 String months[12]={"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+
 String sheetName = "Sheet1";
+
 // create instances of our hardware components
 MFRC522 rfid(SS_PIN, RST_PIN); // Instance of the class
 LiquidCrystal_I2C lcd(0x27,16,2); 
 MFRC522::MIFARE_Key key; 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
-
-// set string for ID 
-String tagID = "";
-boolean getID();
-int cellNum = 1;
-
-bool taskComplete = false;
 
 void setup() { 
   // Init Serial 
@@ -94,13 +89,56 @@ void setup() {
   timeClient.begin();
   timeClient.setTimeOffset(0);
 
-
   //Begin the access token generation for Google API authentication
   GSheet.begin(CLIENT_EMAIL, PROJECT_ID, PRIVATE_KEY);
 }
  
 void loop() {
   bool ready = GSheet.ready();
+
+  lcd.setCursor(2,0);
+  lcd.print("Place Card");
+  String tagID = "";
+  if (getID(tagID)){
+    // run the getID fucntion to get the HEX value for card
+
+    int cellNum = 1;
+    bool inSheet = checkSheet(cellNum, tagID);
+    
+    lcd.clear();
+    lcd.print("Card no: ");
+    lcd.setCursor(2, 1);
+    lcd.print(tagID);
+    delay(2000);
+    lcd.clear();
+
+    // Update name
+    if (ready && inSheet){
+      String name = getName(cellNum);
+      lcd.setCursor(2,0);
+      lcd.print(name);
+      delay(2000);
+      lcd.clear();
+
+      lcd.setCursor(2,0);
+      lcd.print("Access Granted");
+      setTime(cellNum);
+      delay(2000);
+      lcd.clear();
+    }
+
+    // check if it is not in sheets 
+    if(!inSheet){
+      lcd.setCursor(1,0);
+      lcd.print("Access Denied");
+      delay(2000);
+      lcd.clear();
+    }
+
+  }
+}
+
+void setTime(int cellNum){
   timeClient.begin();
 
   //Get a time structure
@@ -113,75 +151,24 @@ void loop() {
   int currentYear = ptm->tm_year+1900;
   String currentDate = String(currentYear) + "-" + String(currentMonth) + "-" + String(monthDay);
 
-  //Begin check for Card
+  FirebaseJson response;
+  FirebaseJson valueRange;
 
+  // Update sheet with attendance check-in date 
+  String temp = sheetName + "!G" + String(cellNum) + ":G";
+  valueRange.add("range", temp);
+  valueRange.add("majorDimension", "ROWS");
+  valueRange.set("values/[0]/[0]", currentDate  ); //row 1/ column 1
 
-  lcd.setCursor(2,0);
-  lcd.print("Place Card");
-  cellNum = 1;
-  if (getID()){
-    // run the getID fucntion to get the HEX value for card
-    lcd.clear();
-
-
-    bool inSheet = checkSheet();
-
-
-
-    // Update time and name
-    if (ready && inSheet){
-      String name = getName();
-      lcd.setCursor(2,0);
-      lcd.print(name);
-      delay(2000);
-      lcd.clear();
-      lcd.setCursor(2,0);
-      
-      FirebaseJson response;
-      FirebaseJson valueRange;
-
-      // Update sheet with attendance check-in date 
-      String temp = sheetName + "!G" + String(cellNum) + ":G";
-      valueRange.add("range", temp);
-      valueRange.add("majorDimension", "ROWS");
-      valueRange.set("values/[0]/[0]", currentDate  ); //row 1/ column 1
-
-      bool success = GSheet.values.update(&response /* returned response */, "19gHJ14CXwInlk0dg2wJrR4vardE-ZPwwI7-Ef6m0T3w" /* spreadsheet Id to update */, temp /* range to update */, &valueRange /* data to update */);
-      response.toString(Serial, true);
-    }
-    
-    lcd.print("Card no: ");
-    lcd.setCursor(2, 1);
-    lcd.print(tagID);
-    delay(2000);
-    lcd.clear();
-
-
-    // check if it is in the sheets in order to see if it is approved
-    if(!inSheet){
-      lcd.setCursor(1,0);
-      lcd.print("Access Denied");
-      delay(2000);
-      lcd.clear();
-    }
-
-    if (inSheet){
-      lcd.setCursor(1,0);
-      lcd.print("Access Granted");
-      delay(2000);
-      lcd.clear();
-    }
-
-  }
-  cellNum = 1;
-
+  bool success = GSheet.values.update(&response, "19gHJ14CXwInlk0dg2wJrR4vardE-ZPwwI7-Ef6m0T3w", temp, &valueRange);
+  response.toString(Serial, true);
 }
 
 // check if it is in the sheet
-boolean checkSheet(){
+boolean checkSheet(int &cellNum, String tagID){
   bool ready = GSheet.ready();
 
-  if (ready && !taskComplete){
+  if (ready){
 
     FirebaseJson response;
     String temp = sheetName + "!F2:F";
@@ -212,18 +199,13 @@ boolean checkSheet(){
       if (str == tagID){
         isThere =  true;
         break;
-
       }
-      
-
     }
-    taskComplete = true;  
-
     return isThere;
   }
 }
 
-String getName(){
+String getName(int cellNum){
  
  bool ready = GSheet.ready();
   
@@ -246,20 +228,18 @@ String getName(){
     // looks throughout the spreadsheet
     String str;
     
-      //result now used as temporary object to get the parse results
-    Serial.println("Cell Num: " + String(cellNum-2));
+    //result now used as temporary object to get the parse results
     arr.get(result, cellNum-2);
     str = result.to<String>();
     str.remove(0,2);
     str.remove(str.length()-2);
     str.trim();      
     
-    Serial.print(str);
     return str;
   }
 
 }
-boolean getID(){
+boolean getID(String &tagID){
   // check if theres a card
   if (!rfid.PICC_IsNewCardPresent()){
     return false;
@@ -269,12 +249,11 @@ boolean getID(){
     return false;
   }
   // concat string with HEX value to get a good formatted string
-  tagID = "";
+
   for (uint8_t i = 0; i < 4; i++){
     tagID.concat(String(rfid.uid.uidByte[i], HEX));
   }
   tagID.toUpperCase();
   rfid.PICC_HaltA();
   return true;
-
 }
